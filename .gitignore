@@ -1,0 +1,6 @@
+firmware/
+station_meteo_client_web/
+station_meteo_client_android/
+.cursor/
+.pio/
+*.uf2
