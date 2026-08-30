@@ -20,6 +20,7 @@ Station-météo/                         →  F4EED/station_meteo_mini     (ce R
   start_StMet.sh                       ← lance le client web + Chromium
   overlay/                             ← sources station (variant, prefs, UI, README overlay)
   overlay/web/README.md                ← note client web
+  overlay/web/apps/web/public/         ← logo / icône MStMet
   overlay/firmware/.../README.md       ← note variant L1 météo
   scripts/apply-station-meteo.py       ← copie l’overlay dans les clones
   firmware/                            →  F4EED/station_meteo_firmware
@@ -62,7 +63,7 @@ Le script est idempotent. Il lit `VERSION`, injecte `STATION_METEO_VERSION` dans
 
 - Checkout : [`firmware/`](firmware/) — `origin` [F4EED/station_meteo_firmware](https://github.com/F4EED/station_meteo_firmware), `upstream` Meshtastic
 - Branche de travail : `station-meteo` (locale) ; l’overlay vit dans ce dépôt parapluie tant que le fork firmware n’a pas reçu le push.
-- Env PlatformIO : `seeed_wio_tracker_L1_meteo`
+- Env PlatformIO : `seeed_wio_tracker_L1_meteo` (`custom_meshtastic_display_name` : **MStMet (Seeed Wio Tracker L1 Pro)**)
 - **Pas** le fork ThinkNode (`mestastic/firmware`)
 - **État :** variant `seeed_wio_tracker_L1_meteo` (L1 Pro **sans écran**), `WeatherAlertPolicy`, `StationMeteoPrefs` (`/prefs/station_meteo.dat`), version **0.1.0**. Flash DFU nRF52 (UF2).
 
@@ -219,7 +220,7 @@ Clone : [`station_meteo_client_android/`](station_meteo_client_android/). Adapta
 - Client web : USB, Bluetooth, IP ; Météo + Plage de mesure.
 - Client web : titre d’onglet **MStMet - Configurateur** ; marque **MStM - Mini Station Météo** / **Via Meshtastic** ; logo mini station ; configuration module sans notif externe / portée / canned / audio / lumière / paxcounter / TAK / status.
 - Météo / Réglages consultables sans nœud ; versioning via fichier `VERSION`.
-- Firmware `seeed_wio_tracker_L1_meteo` : compile PlatformIO OK ; UF2 publié en [release v0.1.0](https://github.com/F4EED/station_meteo_mini/releases/tag/v0.1.0).
+- Firmware `seeed_wio_tracker_L1_meteo` : compile PlatformIO **SUCCESS** (revérifié 2026-08-30 après rebrand MStMet) ; UF2 publié en [release v0.1.0](https://github.com/F4EED/station_meteo_mini/releases/tag/v0.1.0).
 
 ## Historique
 
@@ -227,4 +228,4 @@ Clone : [`station_meteo_client_android/`](station_meteo_client_android/). Adapta
 
 **2026-08-29** — Firmware dans `firmware/` (pas ThinkNode). Premier UF2 flashé. Client web USB / Web Bluetooth / IP.
 
-**2026-08-30** — Factory reset USB. Correctif télémétrie opt-in 2.8. Overlay versionné dans `station_meteo_mini`. Client web **MStMet** : titre **MStMet - Configurateur** ; marque **MStM - Mini Station Météo** / **Via Meshtastic** ; logo / icône point de relevé (mini station) ; configuration module allégée ; Météo / Réglages sans nœud. Semver `VERSION` **0.1.0**. [Release GitHub v0.1.0](https://github.com/F4EED/station_meteo_mini/releases/tag/v0.1.0) (UF2).
+**2026-08-30** — Factory reset USB. Correctif télémétrie opt-in 2.8. Overlay versionné dans `station_meteo_mini`. Client web **MStMet** : titre **MStMet - Configurateur** ; marque **MStM - Mini Station Météo** / **Via Meshtastic** ; logo / icône point de relevé (mini station) ; configuration module allégée ; Météo / Réglages sans nœud. Semver `VERSION` **0.1.0**. Firmware `seeed_wio_tracker_L1_meteo` : compile PlatformIO **SUCCESS** (RAM 40,7 %, flash 71,7 %). [Release GitHub v0.1.0](https://github.com/F4EED/station_meteo_mini/releases/tag/v0.1.0) (UF2).
