@@ -1,6 +1,6 @@
 import { PageLayout } from "@components/PageLayout.tsx";
 import { Sidebar } from "@components/Sidebar.tsx";
-import { BatteryStatus } from "@components/BatteryStatus.tsx";
+import BatteryStatus from "@components/BatteryStatus.tsx";
 import {
   Card,
   CardContent,
