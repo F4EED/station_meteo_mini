@@ -1,6 +1,6 @@
-# Variant `seeed_wio_tracker_L1_meteo`
+# Variant `seeed_wio_tracker_L1_meteo` (MStMet)
 
-Firmware **mini station météo** (semver : fichier `VERSION` à la racine de `station_meteo_mini`) pour Seeed Wio Tracker **L1 Pro** sans écran, capteur Grove BME688 (`Wire1` SDA D18, SCL D17).
+Firmware **MStMet** (Mini Station Météo ; semver : fichier `VERSION` à la racine de `station_meteo_mini`) pour Seeed Wio Tracker **L1 Pro** sans écran, capteur Grove BME688 (`Wire1` SDA D18, SCL D17).
 
 Cadrage complet : [`README.md`](../../../../../README.md) du dépôt `station_meteo_mini`.
 

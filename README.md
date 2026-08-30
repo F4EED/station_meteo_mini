@@ -1,6 +1,6 @@
-# Mini station météo Meshtastic
+# MStMet — Mini Station Météo
 
-Station météo autonome **minimum**, sans écran, nœud LoRa unique. Version projet : **0.1.0** (`VERSION`).
+Station météo autonome **minimum**, sans écran, nœud LoRa unique. Nom d’affichage : **MStMet**. Version projet : **0.1.0** (`VERSION`).
 
 | | |
 | --- | --- |
@@ -49,7 +49,7 @@ git clone https://github.com/F4EED/station_meteo_client_android.git
 python3 scripts/apply-station-meteo.py all
 ```
 
-Le script est idempotent. Il lit `VERSION`, injecte `STATION_METEO_VERSION` dans le variant PlatformIO, ajoute le variant `seeed_wio_tracker_L1_meteo`, la politique de seuils, les prefs persistées, et le client web (titre d’onglet **Mini Station Meteo -Configurateur**, Météo / Plage de mesure / USB·BT·IP, configuration module allégée).
+Le script est idempotent. Il lit `VERSION`, injecte `STATION_METEO_VERSION` dans le variant PlatformIO, ajoute le variant `seeed_wio_tracker_L1_meteo`, la politique de seuils, les prefs persistées, et le client web (titre d’onglet **MStMet - Configurateur**, marque **MStM - Mini Station Météo** / **Via Meshtastic**, Météo / Plage de mesure / USB·BT·IP, configuration module allégée).
 
 ## Matériel
 
@@ -162,7 +162,11 @@ Sans horloge valide : mode Normal = 21600 s. `is_power_saving` reste `true` ; se
 
 Fork dans [`station_meteo_client_web/`](station_meteo_client_web/). Client **simplifié** : télémétrie BME688 / batterie, réglages + **Plage de mesure**. Messagerie / nœuds / carte restent dans le code mais hors navigation.
 
-Titre d’onglet du navigateur (Vite `index.html`) : **Mini Station Meteo -Configurateur**.
+Titre d’onglet du navigateur : **MStMet - Configurateur**.
+
+Marque dans la barre latérale (à la place de « Meshtastic ») :
+1. **MStM - Mini Station Météo**
+2. **Via Meshtastic**
 
 **Réglages → Configuration du module** — onglets **conservés** : MQTT, série, store & forward, télémétrie, voisinage, capteur de détection, matériel distant, trafic. **Masqués** : notification externe, test de portée, message pré-enregistré, audio, lumière ambiante, paxcounter, TAK, status message. Les fichiers upstream des modules restent ; le script d’apply filtre la liste. Sur le firmware `seeed_wio_tracker_L1_meteo`, MQTT / store-forward / voisinage / détection sont aussi exclus à la compile : les onglets UI correspondants ne pilotent rien sur ce nœud.
 
@@ -211,7 +215,7 @@ Clone : [`station_meteo_client_android/`](station_meteo_client_android/). Adapta
 - Factory reset 2.8 : télémétrie environnement + batterie rétablie (`STATION_METEO`).
 - `start_StMet.sh` : client web + Chromium (Web Serial / Web Bluetooth).
 - Client web : USB, Bluetooth, IP ; Météo + Plage de mesure.
-- Client web : titre d’onglet **Mini Station Meteo -Configurateur** ; configuration module sans notif externe / portée / canned / audio / lumière / paxcounter / TAK / status.
+- Client web : titre d’onglet **MStMet - Configurateur** ; marque **MStM - Mini Station Météo** / **Via Meshtastic** ; configuration module sans notif externe / portée / canned / audio / lumière / paxcounter / TAK / status.
 - Météo / Réglages consultables sans nœud ; versioning via fichier `VERSION`.
 - Firmware `seeed_wio_tracker_L1_meteo` : compile PlatformIO OK ; UF2 publié en [release v0.1.0](https://github.com/F4EED/station_meteo_mini/releases/tag/v0.1.0).
 
@@ -221,4 +225,4 @@ Clone : [`station_meteo_client_android/`](station_meteo_client_android/). Adapta
 
 **2026-08-29** — Firmware dans `firmware/` (pas ThinkNode). Premier UF2 flashé. Client web USB / Web Bluetooth / IP.
 
-**2026-08-30** — Factory reset USB. Correctif télémétrie opt-in 2.8. Overlay versionné dans `station_meteo_mini`. Client web : titre **Mini Station Meteo -Configurateur** ; configuration module allégée ; Météo / Réglages sans nœud. Semver `VERSION` **0.1.0**. [Release GitHub v0.1.0](https://github.com/F4EED/station_meteo_mini/releases/tag/v0.1.0) (UF2).
+**2026-08-30** — Factory reset USB. Correctif télémétrie opt-in 2.8. Overlay versionné dans `station_meteo_mini`. Client web **MStMet** : titre **MStMet - Configurateur** ; marque **MStM - Mini Station Météo** / **Via Meshtastic** ; configuration module allégée ; Météo / Réglages sans nœud. Semver `VERSION` **0.1.0**. [Release GitHub v0.1.0](https://github.com/F4EED/station_meteo_mini/releases/tag/v0.1.0) (UF2).

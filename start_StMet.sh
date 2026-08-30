@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Lance le client web station météo + Chromium (Web Serial / Web Bluetooth).
+# Lance le configurateur web MStMet + Chromium (Web Serial / Web Bluetooth).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

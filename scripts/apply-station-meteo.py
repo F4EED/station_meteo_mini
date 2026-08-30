@@ -82,22 +82,27 @@ def _copy_tree(src: Path, dest: Path) -> None:
     print(f"  copy {src.relative_to(OVERLAY)} → {dest}")
 
 
-def _prepend_once(path: Path, marker: str, block: str, label: str) -> None:
+def _upsert_banner(path: Path, start: str, end: str, block: str, label: str) -> None:
     if not path.is_file():
         print(f"  skip (absent) {label}")
         return
     text = path.read_text(encoding="utf-8")
-    if marker in text:
-        print(f"  skip (déjà appliqué) {label}")
-        return
+    if start in text and end in text:
+        i0 = text.find(start)
+        i1 = text.find(end)
+        if i1 > i0:
+            rest = text[i1 + len(end) :].lstrip("\n")
+            path.write_text(text[:i0] + block + rest, encoding="utf-8")
+            print(f"  refresh banner {label}")
+            return
     path.write_text(block + text, encoding="utf-8")
     print(f"  prepend {label}")
 
 
 FIRMWARE_README_BANNER = """<!-- STATION_METEO -->
-# Mini station météo (overlay)
+# MStMet (overlay firmware)
 
-Clone firmware pour la **mini station météo** (Seeed Wio Tracker L1 Pro headless, BME688).
+Clone firmware **MStMet** (Mini Station Météo) — Seeed Wio Tracker L1 Pro headless, BME688.
 
 - Env PlatformIO : `seeed_wio_tracker_L1_meteo`
 - Détail variant : [`variants/nrf52840/seeed_wio_tracker_L1_meteo/README.md`](variants/nrf52840/seeed_wio_tracker_L1_meteo/README.md)
@@ -111,13 +116,14 @@ Le texte Meshtastic officiel suit.
 """
 
 WEB_README_BANNER = """<!-- STATION_METEO -->
-# Mini Station Meteo -Configurateur
+# MStMet — Configurateur
 
-Fork **station météo** du client Meshtastic web (overlay `station_meteo_mini`).
+Fork **MStMet** (Mini Station Météo) du client Meshtastic web (overlay `station_meteo_mini`).
 
 | | |
 | --- | --- |
-| **Onglet navigateur** | Mini Station Meteo -Configurateur |
+| **Onglet navigateur** | MStMet - Configurateur |
+| **Marque UI** | MStM - Mini Station Météo / Via Meshtastic |
 | **Nav** | Météo · Réglages (Plage de mesure) |
 | **Connexions** | USB · Bluetooth · IP |
 | **Lancer** | depuis le parapluie : `./start_StMet.sh` → http://127.0.0.1:5173/ |
@@ -133,9 +139,10 @@ Le README Meshtastic officiel suit.
 """
 
 WEB_APPS_README_BANNER = """<!-- STATION_METEO -->
-# Mini Station Meteo -Configurateur
+# MStMet — Configurateur
 
-App web station météo. Titre d’onglet Vite : **Mini Station Meteo -Configurateur**.
+App web **MStMet**. Titre d’onglet Vite : **MStMet - Configurateur**.
+Marque : **MStM - Mini Station Météo** / **Via Meshtastic**.
 
 Lancer : `pnpm --filter meshtastic-web dev --host 0.0.0.0 --port 5173`  
 ou `./start_StMet.sh` depuis `station_meteo_mini`.
@@ -357,9 +364,10 @@ def apply_firmware(fw: Path) -> None:
     )
 
     merge_userprefs(fw / "userPrefs.jsonc")
-    _prepend_once(
+    _upsert_banner(
         fw / "README.md",
         "<!-- STATION_METEO -->",
+        "<!-- /STATION_METEO -->",
         FIRMWARE_README_BANNER,
         "firmware README banner",
     )
@@ -724,6 +732,57 @@ import { SidebarSection } from "@components/UI/Sidebar/SidebarSection.tsx";
 """,
         "sidebar unused spinner/subtle",
     )
+    _replace_once(
+        sidebar,
+        '          "h-14 flex mt-2 gap-2 items-center flex-shrink-0 transition-all duration-300 ease-in-out",',
+        '          "h-16 flex mt-2 gap-2 items-center flex-shrink-0 transition-all duration-300 ease-in-out",',
+        "sidebar header height",
+    )
+    _replace_first(
+        sidebar,
+        [
+            (
+                """        <h2
+          className={cn(
+            "text-xl font-semibold text-gray-800 dark:text-gray-100 whitespace-nowrap",
+            "transition-all duration-300 ease-in-out",
+            isCollapsed
+              ? "opacity-0 max-w-0 invisible ml-0"
+              : "opacity-100 max-w-xs visible ml-2",
+          )}
+        >
+          {t("app.title")}
+        </h2>""",
+                """        <div
+          className={cn(
+            "flex flex-col justify-center leading-tight",
+            "transition-all duration-300 ease-in-out",
+            isCollapsed
+              ? "opacity-0 max-w-0 invisible ml-0"
+              : "opacity-100 max-w-[14rem] visible ml-2",
+          )}
+        >
+          <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+            {t("app.title")}
+          </span>
+          <span className="text-xs text-slate-500 dark:text-slate-400">
+            {t("app.subtitle")}
+          </span>
+        </div>""",
+            ),
+            (
+                '              : "opacity-100 max-w-[11rem] visible ml-2",',
+                '              : "opacity-100 max-w-[14rem] visible ml-2",',
+            ),
+        ],
+        "sidebar MStMet two-line brand",
+    )
+    _replace_once(
+        sidebar,
+        '        isCollapsed ? "w-24" : "w-52 lg:w-64",',
+        '        isCollapsed ? "w-24" : "w-60 lg:w-72",',
+        "sidebar brand width",
+    )
 
     app = web / "apps/web/src/App.tsx"
     _replace_once(
@@ -932,11 +991,49 @@ export const RegionSetupReminder = (): null => {
     )
 
     vite_cfg = web / "apps/web/vite.config.ts"
-    _replace_once(
+    _replace_first(
         vite_cfg,
-        'title: isTest ? "Meshtastic Web (TEST)" : "Meshtastic Web",',
-        'title: "Mini Station Meteo -Configurateur",',
+        [
+            (
+                'title: isTest ? "Meshtastic Web (TEST)" : "Meshtastic Web",',
+                'title: "MStMet - Configurateur",',
+            ),
+            (
+                'title: "Mini Station Meteo -Configurateur",',
+                'title: "MStMet - Configurateur",',
+            ),
+        ],
         "vite html title",
+    )
+    _replace_first(
+        web / "apps/web/index.html",
+        [
+            (
+                'content="Meshtastic Web Client"',
+                'content="MStMet — Mini Station Météo."',
+            ),
+            (
+                'content="Meshtastic Web"',
+                'content="MStMet — Mini Station Météo."',
+            ),
+            (
+                'content="Mini Station Météo — configurateur web."',
+                'content="MStMet — Mini Station Météo."',
+            ),
+        ],
+        "vite html description",
+    )
+    _replace_once(
+        web / "apps/web/public/site.webmanifest",
+        """  "name": "Meshtastic",
+  "short_name": "Web Client",
+  "start_url": ".",
+  "description": "Meshtastic Web App",""",
+        """  "name": "MStMet",
+  "short_name": "MStMet",
+  "start_url": ".",
+  "description": "MStM - Mini Station Météo · Via Meshtastic",""",
+        "webmanifest name",
     )
 
     module_cfg = web / "apps/web/src/pages/Settings/ModuleConfig.tsx"
@@ -1032,6 +1129,11 @@ export const ModuleConfig = ({ onFormInit }: ConfigProps) => {""",
         nav = d.setdefault("navigation", {})
         nav["meteo"] = "Météo"
         nav["connect"] = "Connecter"
+        app = d.setdefault("app", {})
+        if isinstance(app, dict):
+            app["title"] = "MStM - Mini Station Météo"
+            app["subtitle"] = "Via Meshtastic"
+            app["logo"] = "Logo MStMet"
         d["meteo"] = {
             "battery": "Batterie",
             "environment": "BME688",
@@ -1047,6 +1149,11 @@ export const ModuleConfig = ({ onFormInit }: ConfigProps) => {""",
         nav = d.setdefault("navigation", {})
         nav["meteo"] = "Weather"
         nav["connect"] = "Connect"
+        app = d.setdefault("app", {})
+        if isinstance(app, dict):
+            app["title"] = "MStM - Mini Station Météo"
+            app["subtitle"] = "Via Meshtastic"
+            app["logo"] = "MStMet logo"
         d["meteo"] = {
             "battery": "Battery",
             "environment": "BME688",
@@ -1165,15 +1272,46 @@ export const ModuleConfig = ({ onFormInit }: ConfigProps) => {""",
             d.setdefault("goto", {}).setdefault("command", {})["meteo"] = "Weather"
         _patch_json(locales / "en/commandPalette.json", cmd_en)
 
-    _prepend_once(
+    def common_brand(d):
+        app = d.setdefault("app", {})
+        if isinstance(app, dict):
+            app["title"] = "MStMet"
+            app["fullTitle"] = "MStMet - Configurateur"
+
+    _patch_json(locales / "fr-FR/common.json", common_brand)
+    _patch_json(locales / "en/common.json", common_brand)
+
+    def brand_other_ui(d):
+        app = d.setdefault("app", {})
+        if isinstance(app, dict):
+            app["title"] = "MStM - Mini Station Météo"
+            app["subtitle"] = "Via Meshtastic"
+            logo = app.get("logo")
+            if isinstance(logo, str) and "Meshtastic" in logo:
+                app["logo"] = logo.replace("Meshtastic", "MStMet")
+            elif not logo:
+                app["logo"] = "MStMet logo"
+
+    for ui_path in sorted(locales.glob("*/ui.json")):
+        if ui_path.parent.name in ("fr-FR", "en"):
+            continue
+        _patch_json(ui_path, brand_other_ui)
+    for common_path in sorted(locales.glob("*/common.json")):
+        if common_path.parent.name in ("fr-FR", "en"):
+            continue
+        _patch_json(common_path, common_brand)
+
+    _upsert_banner(
         web / "README.md",
         "<!-- STATION_METEO -->",
+        "<!-- /STATION_METEO -->",
         WEB_README_BANNER,
         "web README banner",
     )
-    _prepend_once(
+    _upsert_banner(
         web / "apps/web/README.md",
         "<!-- STATION_METEO -->",
+        "<!-- /STATION_METEO -->",
         WEB_APPS_README_BANNER,
         "apps/web README banner",
     )
