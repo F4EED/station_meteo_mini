@@ -229,7 +229,7 @@ Clone : [`station_meteo_client_android/`](station_meteo_client_android/). Adapta
 - Client web : USB, Bluetooth, IP ; Météo + Plage de mesure.
 - Client web : titre d’onglet **MStMet - Configurateur** ; marque **MStM - Mini Station Météo** / **Via Meshtastic** ; logo mini station ; configuration module sans notif externe / portée / canned / audio / lumière / paxcounter / TAK / status.
 - Météo / Réglages consultables sans nœud ; versioning via fichier `VERSION`.
-- Firmware `seeed_wio_tracker_L1_meteo` : GPS L76K **one-shot** (allumé le temps d’un fix, puis éteint), BME688 seul ; LoRa MQTT forcé (`ignore_mqtt=false`, `ok_to_mqtt=true`). UF2 [release v0.1.0](https://github.com/F4EED/station_meteo_mini/releases/tag/v0.1.0) à recréer pour flasher ces changements.
+- Firmware `seeed_wio_tracker_L1_meteo` : GPS L76K **one-shot** (allumé le temps d’un fix, puis éteint), BME688 seul ; LoRa MQTT forcé (`ignore_mqtt=false`, `ok_to_mqtt=true`). Compile PlatformIO **SUCCESS** RAM **40,3 %**, flash **59,6 %** (sans GPS dans l’image : 40,1 % / 54,6 %). UF2 [release v0.1.0](https://github.com/F4EED/station_meteo_mini/releases/tag/v0.1.0) à recréer pour flasher ces changements.
 
 ## Historique
 
@@ -237,4 +237,4 @@ Clone : [`station_meteo_client_android/`](station_meteo_client_android/). Adapta
 
 **2026-08-29** — Firmware dans `firmware/` (pas ThinkNode). Premier UF2 flashé. Client web USB / Web Bluetooth / IP.
 
-**2026-08-30** — Factory reset USB. Correctif télémétrie opt-in 2.8. Overlay versionné dans `station_meteo_mini`. Client web **MStMet** : titre **MStMet - Configurateur** ; marque **MStM - Mini Station Météo** / **Via Meshtastic** ; logo / icône point de relevé (mini station) ; configuration module allégée ; Météo / Réglages sans nœud. Semver `VERSION` **0.1.0**. Firmware allégé : BME688 seul, modules inutiles exclus. GPS L76K **one-shot** (chasse d’un fix au boot, puis extinction pour la batterie). Compile **SUCCESS** RAM 40,1 %, flash 54,6 % **sans** GPS dans l’image ; à recréer après réintégration GPS. [Release GitHub v0.1.0](https://github.com/F4EED/station_meteo_mini/releases/tag/v0.1.0) (UF2 ancien — reflasher après nouvelle compile).
+**2026-08-30** — Factory reset USB. Correctif télémétrie opt-in 2.8. Overlay versionné dans `station_meteo_mini`. Client web **MStMet** : titre **MStMet - Configurateur** ; marque **MStM - Mini Station Météo** / **Via Meshtastic** ; logo / icône point de relevé (mini station) ; configuration module allégée ; Météo / Réglages sans nœud. Semver `VERSION` **0.1.0**. Firmware allégé : BME688 seul, modules inutiles exclus. GPS L76K **one-shot** (chasse d’un fix au boot, puis extinction pour la batterie). Compile **SUCCESS** RAM **40,3 %**, flash **59,6 %**. [Release GitHub v0.1.0](https://github.com/F4EED/station_meteo_mini/releases/tag/v0.1.0) (UF2 ancien — reflasher après nouvelle compile).
