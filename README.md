@@ -126,7 +126,7 @@ Cibles au premier boot / factory reset. Alignées sur [Gaulix.fr](https://gaulix
 | Override frequency | **869.4625 MHz** |
 | Override duty cycle | `false` |
 | SX126x RX boosted gain | `true` |
-| Ignore MQTT | `false` |
+| Ignore MQTT | `false` (forcé : le firmware stock le met à `true` en EU_868) |
 | OK to MQTT | `true` |
 | Nom long | `42METOLM8Sensor- mini st` (24 octets) |
 
@@ -214,7 +214,7 @@ Clone : [`station_meteo_client_android/`](station_meteo_client_android/). Adapta
 - Quatre dépôts F4EED : `station_meteo_mini` (README + overlay), `_firmware`, `_client_web`, `_client_android`.
 - Variant `seeed_wio_tracker_L1_meteo` + `WeatherAlertPolicy` + `StationMeteoPrefs`.
 - Canaux défaut : `Fr_Balise`, `Fr_EMCOM`, `Fr-BlaBla`, `Alerte` (PSK `AQ==`).
-- LoRa : `ignore_mqtt` = false, `config_ok_to_mqtt` = true.
+- LoRa : `ignore_mqtt` = false, `config_ok_to_mqtt` = true (forcé au boot et à chaque SET LoRa ; Meshtastic stock force `ignore_mqtt` en région à duty cycle).
 - Factory reset 2.8 : télémétrie environnement + batterie rétablie (`STATION_METEO`).
 - `start_StMet.sh` : client web + Chromium (Web Serial / Web Bluetooth).
 - Client web : USB, Bluetooth, IP ; Météo + Plage de mesure.

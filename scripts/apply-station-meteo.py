@@ -246,6 +246,28 @@ def apply_firmware(fw: Path) -> None:
     )
     _replace_once(
         nodedb,
+        """        moduleConfig.version = POSITION_TELEMETRY_OPTIN_VER;
+        saveToDisk(SEGMENT_MODULECONFIG);
+    }
+
+    if (channels.ensureLicensedOperation()) {""",
+        """        moduleConfig.version = POSITION_TELEMETRY_OPTIN_VER;
+        saveToDisk(SEGMENT_MODULECONFIG);
+    }
+
+#ifdef STATION_METEO
+    if (config.lora.ignore_mqtt || !config.lora.config_ok_to_mqtt) {
+        config.lora.ignore_mqtt = false;
+        config.lora.config_ok_to_mqtt = true;
+        saveToDisk(SEGMENT_CONFIG);
+    }
+#endif
+
+    if (channels.ensureLicensedOperation()) {""",
+        "NodeDB force ignore_mqtt false ok_to_mqtt true",
+    )
+    _replace_once(
+        nodedb,
         """    initModuleConfigIntervals();
 }""",
         """    initModuleConfigIntervals();
@@ -414,6 +436,21 @@ def apply_firmware(fw: Path) -> None:
     default:
         break;""",
         "Channels.cpp index 3 Alerte",
+    )
+
+    admin = fw / "src/modules/AdminModule.cpp"
+    _replace_once(
+        admin,
+        """        config.lora = validatedLora; // Finally, return the validated config back to the main config
+""",
+        """#ifdef STATION_METEO
+        // EU_868 (duty cycle) force sinon ignore_mqtt=true ; Gaulix veut l'inverse + ok_to_mqtt.
+        validatedLora.ignore_mqtt = false;
+        validatedLora.config_ok_to_mqtt = true;
+#endif
+        config.lora = validatedLora; // Finally, return the validated config back to the main config
+""",
+        "AdminModule LoRa MQTT flags",
     )
 
     merge_userprefs(fw / "userPrefs.jsonc")
