@@ -151,6 +151,8 @@ Connexions (Chromium, `./start_StMet.sh`) :
 | **Bluetooth** | Web Bluetooth |
 | **IP** | HTTP(S) |
 
+Sans nœud branché, **Météo** et **Réglages → Plage de mesure** restent consultables (valeurs `—`, bouton **Connecter**). USB / Bluetooth ne marchent que dans Chromium **sur la machine où la carte est branchée**.
+
 ### Lancer
 
 ```bash

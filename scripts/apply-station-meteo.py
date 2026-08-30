@@ -30,6 +30,21 @@ def _replace_once(path: Path, old: str, new: str, label: str) -> None:
     print(f"  patch {label}")
 
 
+def _replace_first(
+    path: Path, pairs: list[tuple[str, str]], label: str
+) -> None:
+    text = path.read_text(encoding="utf-8")
+    for old, new in pairs:
+        if new in text:
+            print(f"  skip (déjà appliqué) {label}")
+            return
+        if old in text:
+            path.write_text(text.replace(old, new, 1), encoding="utf-8")
+            print(f"  patch {label}")
+            return
+    raise SystemExit(f"motif introuvable dans {path} ({label})")
+
+
 def _copy_tree(src: Path, dest: Path) -> None:
     dest.parent.mkdir(parents=True, exist_ok=True)
     if src.is_dir():
@@ -465,17 +480,113 @@ import { MeasurementRange } from "@pages/Settings/MeasurementRange.tsx";""",
   ];""",
         "sidebar nav",
     )
-    _replace_once(
+    _replace_first(
         sidebar,
-        """  MapIcon,
+        [
+            (
+                """  MapIcon,
   MessageSquareIcon,
   SettingsIcon,
   UsersIcon,
 } from "lucide-react";""",
-        """  CloudSun,
+                """  Cable,
+  CloudSun,
   SettingsIcon,
 } from "lucide-react";""",
+            ),
+            (
+                """  CloudSun,
+  SettingsIcon,
+} from "lucide-react";""",
+                """  Cable,
+  CloudSun,
+  SettingsIcon,
+} from "lucide-react";""",
+            ),
+        ],
         "sidebar icons",
+    )
+    _replace_once(
+        sidebar,
+        """              onClick={() => {
+                if (myNode !== undefined) {
+                  navigate({ to: `/${link.page}` });
+                }
+              }}
+              active={link.page === pathname}
+              disabled={myNode === undefined}""",
+        """              onClick={() => {
+                navigate({ to: `/${link.page}` });
+              }}
+              active={
+                pathname === link.page || pathname.startsWith(`${link.page}/`)
+              }
+              disabled={false}""",
+        "sidebar nav without node",
+    )
+    _replace_once(
+        sidebar,
+        """        {myNode === undefined ? (
+          <div className="flex flex-col items-center justify-center py-6">
+            <Spinner />
+            <Subtle
+              className={cn(
+                "mt-4 transition-opacity duration-300",
+                isCollapsed ? "opacity-0 invisible" : "opacity-100 visible",
+              )}
+            >
+              {t("loading")}
+            </Subtle>
+          </div>
+        ) : (""",
+        """        {myNode === undefined ? (
+          <div className="flex flex-col items-center justify-center py-6 px-2 gap-2">
+            <button
+              type="button"
+              className="inline-flex items-center gap-2 rounded-md bg-slate-900 px-3 py-2 text-sm text-white dark:bg-slate-50 dark:text-slate-900"
+              onClick={() => navigate({ to: "/connections" })}
+            >
+              <Cable size={16} />
+              {t("navigation.connect")}
+            </button>
+          </div>
+        ) : (""",
+        "sidebar connect button",
+    )
+
+    app = web / "apps/web/src/App.tsx"
+    _replace_once(
+        app,
+        """              {device ? (
+                <div className="h-full flex w-full">
+                  <DialogManager />
+                  <KeyBackupReminder />
+                  <RegionSetupReminder />
+                  <CommandPalette />
+                  <MapProvider>
+                    <Outlet />
+                  </MapProvider>
+                </div>
+              ) : (
+                <>
+                  <Connections />
+                  <Footer />
+                </>
+              )}""",
+        """              <div className="h-full flex w-full">
+                <DialogManager />
+                {device ? (
+                  <>
+                    <KeyBackupReminder />
+                    <RegionSetupReminder />
+                    <CommandPalette />
+                  </>
+                ) : null}
+                <MapProvider>
+                  <Outlet />
+                </MapProvider>
+              </div>""",
+        "App always Outlet disconnected",
     )
 
     dialog = web / "apps/web/src/components/Dialog/AddConnectionDialog/AddConnectionDialog.tsx"
@@ -525,6 +636,7 @@ import { MeasurementRange } from "@pages/Settings/MeasurementRange.tsx";""",
     def fr_ui(d):
         nav = d.setdefault("navigation", {})
         nav["meteo"] = "Météo"
+        nav["connect"] = "Connecter"
         d["meteo"] = {
             "battery": "Batterie",
             "environment": "BME688",
@@ -539,6 +651,7 @@ import { MeasurementRange } from "@pages/Settings/MeasurementRange.tsx";""",
     def en_ui(d):
         nav = d.setdefault("navigation", {})
         nav["meteo"] = "Weather"
+        nav["connect"] = "Connect"
         d["meteo"] = {
             "battery": "Battery",
             "environment": "BME688",
