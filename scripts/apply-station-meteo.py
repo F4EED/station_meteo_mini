@@ -124,6 +124,7 @@ Fork **MStMet** (Mini Station Météo) du client Meshtastic web (overlay `statio
 | --- | --- |
 | **Onglet navigateur** | MStMet - Configurateur |
 | **Marque UI** | MStM - Mini Station Météo / Via Meshtastic |
+| **Logo** | mini station (abri, solaire, antenne) |
 | **Nav** | Météo · Réglages (Plage de mesure) |
 | **Connexions** | USB · Bluetooth · IP |
 | **Lancer** | depuis le parapluie : `./start_StMet.sh` → http://127.0.0.1:5173/ |
@@ -143,6 +144,7 @@ WEB_APPS_README_BANNER = """<!-- STATION_METEO -->
 
 App web **MStMet**. Titre d’onglet Vite : **MStMet - Configurateur**.
 Marque : **MStM - Mini Station Météo** / **Via Meshtastic**.
+Logo : pictogramme de mini station météo (`logo.svg`).
 
 Lancer : `pnpm --filter meshtastic-web dev --host 0.0.0.0 --port 5173`  
 ou `./start_StMet.sh` depuis `station_meteo_mini`.
@@ -460,6 +462,11 @@ def apply_web(web: Path) -> None:
         src / "apps/web/src/pages/Settings/MeasurementRange.tsx",
         web / "apps/web/src/pages/Settings/MeasurementRange.tsx",
     )
+    public_brand = src / "apps/web/public"
+    dest_public = web / "apps/web/public"
+    if public_brand.is_dir():
+        for item in sorted(public_brand.iterdir()):
+            _copy_tree(item, dest_public / item.name)
 
     _replace_once(
         web / "apps/web/src/core/stores/deviceStore/types.ts",
@@ -1034,6 +1041,40 @@ export const RegionSetupReminder = (): null => {
   "start_url": ".",
   "description": "MStM - Mini Station Météo · Via Meshtastic",""",
         "webmanifest name",
+    )
+    _replace_once(
+        web / "apps/web/public/site.webmanifest",
+        """  "icons": [
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ],""",
+        """  "icons": [
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ],""",
+        "webmanifest icons",
     )
 
     module_cfg = web / "apps/web/src/pages/Settings/ModuleConfig.tsx"

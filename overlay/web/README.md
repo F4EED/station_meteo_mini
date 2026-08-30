@@ -8,6 +8,7 @@ Cadrage : [`README.md`](../../README.md) à la racine de `station_meteo_mini`. S
 | --- | --- |
 | Titre d’onglet | **MStMet - Configurateur** |
 | Marque UI | **MStM - Mini Station Météo** / **Via Meshtastic** |
+| Logo / icône | mini station (abri, solaire, antenne) — `logo.svg`, `icon.svg`, `favicon.ico` |
 | Pages | `/meteo`, `/settings/measurement`, `/connections` |
 | Module config masqué | notification externe, test de portée, message pré-enregistré, audio, lumière ambiante, paxcounter, TAK, status message |
 

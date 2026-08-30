@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>MStMet - Mini Station Meteo</title>
+  <g fill="#000000">
+    <circle cx="128" cy="122" r="34"/>
+    <rect x="120" y="62" width="16" height="28" rx="8"/>
+    <rect x="120" y="154" width="16" height="28" rx="8"/>
+    <rect x="68" y="114" width="28" height="16" rx="8"/>
+    <rect x="160" y="114" width="28" height="16" rx="8"/>
+    <circle cx="352" cy="80" r="16"/>
+    <rect x="345" y="80" width="14" height="108" rx="7"/>
+    <rect x="241" y="328" width="30" height="100" rx="4"/>
+    <rect x="216" y="418" width="80" height="14" rx="4"/>
+    <rect x="196" y="430" width="120" height="18" rx="5"/>
+    <rect x="170" y="198" width="172" height="138" rx="22"/>
+  </g>
+  <g transform="translate(166,156) skewY(-8)">
+    <rect width="186" height="58" rx="6" fill="#000000"/>
+  </g>
+</svg>
