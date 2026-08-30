@@ -4,7 +4,7 @@ Firmware **MStMet** (Mini Station Météo ; semver : fichier `VERSION` à la rac
 
 Cadrage complet : [`README.md`](../../../../../README.md) du dépôt `station_meteo_mini`.
 
-**UF2 :** [release v0.1.0](https://github.com/F4EED/station_meteo_mini/releases/tag/v0.1.0) (`firmware-seeed_wio_tracker_L1_meteo-0.1.0.uf2` — **sans** GPS one-shot). Compile PlatformIO `seeed_wio_tracker_L1_meteo` **SUCCESS** (2026-08-30, GPS one-shot) : RAM **40,3 %**, flash **59,6 %**. Nom d’affichage Meshtastic : **MStMet (Seeed Wio Tracker L1 Pro)**. GPS L76K **one-shot** (fix au boot, puis standby).
+**UF2 :** [release v0.1.0](https://github.com/F4EED/station_meteo_mini/releases/tag/v0.1.0) (`firmware-seeed_wio_tracker_L1_meteo-0.1.0.uf2`, rebuild GPS one-shot). Compile PlatformIO `seeed_wio_tracker_L1_meteo` **SUCCESS** (2026-08-30) : RAM **40,3 %**, flash **59,6 %**. Nom d’affichage Meshtastic : **MStMet (Seeed Wio Tracker L1 Pro)**. GPS L76K **one-shot** (fix au boot, puis standby).
 
 ## Compiler / flasher
 
