@@ -4,7 +4,7 @@ Firmware **MStMet** (Mini Station Météo ; semver : fichier `VERSION` à la rac
 
 Cadrage complet : [`README.md`](../../../../../README.md) du dépôt `station_meteo_mini`.
 
-**UF2 :** [release v0.1.0](https://github.com/F4EED/station_meteo_mini/releases/tag/v0.1.0) (`firmware-seeed_wio_tracker_L1_meteo-0.1.0.uf2`). Compile PlatformIO `seeed_wio_tracker_L1_meteo` **SUCCESS** (2026-08-30) : RAM 40,7 %, flash 71,7 %. Nom d’affichage Meshtastic : **MStMet (Seeed Wio Tracker L1 Pro)**.
+**UF2 :** [release v0.1.0](https://github.com/F4EED/station_meteo_mini/releases/tag/v0.1.0) (`firmware-seeed_wio_tracker_L1_meteo-0.1.0.uf2`). Compile PlatformIO `seeed_wio_tracker_L1_meteo` **SUCCESS** (2026-08-30, allégé GPS/capteurs) : RAM 40,1 %, flash 54,6 %. Nom d’affichage Meshtastic : **MStMet (Seeed Wio Tracker L1 Pro)**.
 
 ## Compiler / flasher
 
@@ -18,4 +18,4 @@ pio run -e seeed_wio_tracker_L1_meteo
 
 ## Exclusions compile
 
-Écran, Wi‑Fi, MQTT, canned messages, store & forward, ATAK, paxcounter, detection sensor, waypoint, neighbor info, traceroute, notifications externes.
+Écran, GPS (L76K en standby matériel), Wi‑Fi, MQTT, canned messages, store & forward, ATAK, paxcounter, detection sensor, waypoint, neighbor info, traceroute, notifications externes, replybot, dropzone, status, remote hardware, module série, télémétrie santé, capteurs air quality, accéléro / magnéto. Capteurs I2C : **BME688 seulement**.

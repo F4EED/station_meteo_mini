@@ -54,7 +54,7 @@ Le script est idempotent. Il lit `VERSION`, injecte `STATION_METEO_VERSION` dans
 
 ## Matériel
 
-- **L1 Pro** : boîtier, batterie, entrée solaire USB-C / solaire / 3,7 V (PMIC Seeed). GPS hardware présent, **désactivé** par défaut. Grove I2C `Wire1` : SDA D18, SCL D17.
+- **L1 Pro** : boîtier, batterie, entrée solaire USB-C / solaire / 3,7 V (PMIC Seeed). GPS L76K **hors firmware** (`HAS_GPS=0`) ; `PIN_GPS_STANDBY` forcé bas pour le mettre en veille. Grove I2C `Wire1` : SDA D18, SCL D17.
 - **Pas d’écran** : ne pas flasher `seeed_wio_tracker_L1_eink` ni compter sur l’OLED du variant L1 stock (`HAS_SCREEN` / `USE_SSD1306`).
 - **BME688** : adresse I2C `0x76` ou `0x77`. Driver firmware `BME680Sensor` (Adafruit BME680). Grandeurs : température °C, humidité %, pression hPa, résistance gaz Ω, IAQ 0–500, CO2 estimé ppm (`400 + IAQ × 4`, pas BSEC Bosch).
 - Tension batterie : ADC `PIN_VBAT` + `BAT_READ`, télémétrie power activée.
@@ -76,7 +76,7 @@ pio run -e seeed_wio_tracker_L1_meteo
 # Sinon : pio run -e seeed_wio_tracker_L1_meteo -t upload   (1200 bps / nrfutil, pas esptool)
 ```
 
-Allègement **à la compile** : `HAS_SCREEN=0`, `MESHTASTIC_EXCLUDE_SCREEN`, exclusions MQTT / Wi‑Fi / ATAK / canned messages / store & forward / paxcounter / detection sensor / waypoint / neighbor info / traceroute / notifs externes. Conservé : LoRa, BLE, I2C, télémétrie environnement + power, admin, PKI.
+Allègement **à la compile** : `HAS_SCREEN=0`, `HAS_GPS=0`, `MESHTASTIC_EXCLUDE_GPS` (L76K forcé en standby), exclusions MQTT / Wi‑Fi / ATAK / canned / store-forward / paxcounter / détection / waypoint / voisinage / traceroute / notifs / replybot / dropzone / status / remote hardware / série module / health / air quality / accéléro. Conservé : LoRa, BLE, I2C, BME688 uniquement, télémétrie power, admin, PKI, messages.
 
 Fichiers overlay : `overlay/firmware/variants/nrf52840/seeed_wio_tracker_L1_meteo/` (dont un README variant), `StationMeteoPrefs`, `StationMeteoModule` (port `PRIVATE_APP`), `WeatherAlertPolicy.h`. Pas d’édition de `src/mesh/generated/`.
 
@@ -220,7 +220,7 @@ Clone : [`station_meteo_client_android/`](station_meteo_client_android/). Adapta
 - Client web : USB, Bluetooth, IP ; Météo + Plage de mesure.
 - Client web : titre d’onglet **MStMet - Configurateur** ; marque **MStM - Mini Station Météo** / **Via Meshtastic** ; logo mini station ; configuration module sans notif externe / portée / canned / audio / lumière / paxcounter / TAK / status.
 - Météo / Réglages consultables sans nœud ; versioning via fichier `VERSION`.
-- Firmware `seeed_wio_tracker_L1_meteo` : compile PlatformIO **SUCCESS** (revérifié 2026-08-30 après rebrand MStMet) ; UF2 publié en [release v0.1.0](https://github.com/F4EED/station_meteo_mini/releases/tag/v0.1.0).
+- Firmware `seeed_wio_tracker_L1_meteo` : GPS hors image, BME688 seul ; compile PlatformIO **SUCCESS** (RAM 40,1 %, flash 54,6 %) ; UF2 [release v0.1.0](https://github.com/F4EED/station_meteo_mini/releases/tag/v0.1.0) (à recréer pour flasher cet allègement).
 
 ## Historique
 
@@ -228,4 +228,4 @@ Clone : [`station_meteo_client_android/`](station_meteo_client_android/). Adapta
 
 **2026-08-29** — Firmware dans `firmware/` (pas ThinkNode). Premier UF2 flashé. Client web USB / Web Bluetooth / IP.
 
-**2026-08-30** — Factory reset USB. Correctif télémétrie opt-in 2.8. Overlay versionné dans `station_meteo_mini`. Client web **MStMet** : titre **MStMet - Configurateur** ; marque **MStM - Mini Station Météo** / **Via Meshtastic** ; logo / icône point de relevé (mini station) ; configuration module allégée ; Météo / Réglages sans nœud. Semver `VERSION` **0.1.0**. Firmware `seeed_wio_tracker_L1_meteo` : compile PlatformIO **SUCCESS** (RAM 40,7 %, flash 71,7 %). [Release GitHub v0.1.0](https://github.com/F4EED/station_meteo_mini/releases/tag/v0.1.0) (UF2).
+**2026-08-30** — Factory reset USB. Correctif télémétrie opt-in 2.8. Overlay versionné dans `station_meteo_mini`. Client web **MStMet** : titre **MStMet - Configurateur** ; marque **MStM - Mini Station Météo** / **Via Meshtastic** ; logo / icône point de relevé (mini station) ; configuration module allégée ; Météo / Réglages sans nœud. Semver `VERSION` **0.1.0**. Firmware allégé : GPS hors image (L76K standby), BME688 seul, modules inutiles exclus. Compile **SUCCESS** RAM 40,1 %, flash 54,6 % (avant allègement : 40,7 % / 71,7 %). [Release GitHub v0.1.0](https://github.com/F4EED/station_meteo_mini/releases/tag/v0.1.0) (UF2 — reflasher pour bénéficier de l’allègement).

@@ -271,6 +271,57 @@ def apply_firmware(fw: Path) -> None:
     )
     _replace_once(
         env_cpp,
+        """#ifdef STATION_METEO
+#include "WeatherAlertPolicy.h"
+#endif
+""",
+        """#ifdef STATION_METEO
+#include "WeatherAlertPolicy.h"
+#if __has_include(<bsec2.h>) || __has_include(<Adafruit_BME680.h>)
+#include "Sensor/BME680Sensor.h"
+#endif
+#endif
+""",
+        "EnvironmentTelemetry BME680 include",
+    )
+    _replace_once(
+        env_cpp,
+        """#if !MESHTASTIC_EXCLUDE_ENVIRONMENTAL_SENSOR_EXTERNAL
+
+// Sensors
+""",
+        """#if !defined(STATION_METEO) && !MESHTASTIC_EXCLUDE_ENVIRONMENTAL_SENSOR_EXTERNAL
+
+// Sensors
+""",
+        "EnvironmentTelemetry skip extra sensor includes",
+    )
+    _replace_once(
+        env_cpp,
+        """#if !MESHTASTIC_EXCLUDE_ENVIRONMENTAL_SENSOR && !MESHTASTIC_EXCLUDE_ENVIRONMENTAL_SENSOR_EXTERNAL
+    addSensor<RCWL9620Sensor>(i2cScanner, ScanI2C::DeviceType::RCWL9620);
+""",
+        """#if defined(STATION_METEO)
+#if __has_include(<bsec2.h>) || __has_include(<Adafruit_BME680.h>)
+    addSensor<BME680Sensor>(i2cScanner, ScanI2C::DeviceType::BME_680);
+#endif
+#elif !MESHTASTIC_EXCLUDE_ENVIRONMENTAL_SENSOR && !MESHTASTIC_EXCLUDE_ENVIRONMENTAL_SENSOR_EXTERNAL
+    addSensor<RCWL9620Sensor>(i2cScanner, ScanI2C::DeviceType::RCWL9620);
+""",
+        "EnvironmentTelemetry BME680 only",
+    )
+    _replace_once(
+        env_cpp,
+        """#elif !MESHTASTIC_EXCLUDE_ENVIRONMENTAL_SENSOR_EXTERNAL
+            if (ina219Sensor.hasSensor())
+""",
+        """#elif !defined(STATION_METEO) && !MESHTASTIC_EXCLUDE_ENVIRONMENTAL_SENSOR_EXTERNAL
+            if (ina219Sensor.hasSensor())
+""",
+        "EnvironmentTelemetry skip INA sensors",
+    )
+    _replace_once(
+        env_cpp,
         """        for (TelemetrySensor *sensor : sensors) {
             uint32_t delay = sensor->runOnce();
             if (delay < result) {
@@ -402,7 +453,7 @@ STATION_USERPREFS = {
     "USERPREFS_CHANNEL_3_PRECISION": "0",
     "USERPREFS_CHANNEL_3_PSK": "{ 0x01 }",
     "USERPREFS_CHANNEL_3_UPLINK_ENABLED": "false",
-    "USERPREFS_CONFIG_GPS_MODE": "meshtastic_Config_PositionConfig_GpsMode_DISABLED",
+    "USERPREFS_CONFIG_GPS_MODE": "meshtastic_Config_PositionConfig_GpsMode_NOT_PRESENT",
     "USERPREFS_CONFIG_LORA_IGNORE_MQTT": "false",
     "USERPREFS_CONFIG_LORA_REGION": "meshtastic_Config_LoRaConfig_RegionCode_EU_868",
     "USERPREFS_CONFIG_OWNER_LONG_NAME": "42METOLM8Sensor- mini st",

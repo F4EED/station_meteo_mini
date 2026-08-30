@@ -102,10 +102,12 @@ void initVariant()
     digitalWrite(PIN_LED1, LOW);
     pinMode(PIN_LED2, OUTPUT);
     digitalWrite(PIN_LED2, LOW);
-    pinMode(PIN_LED2, OUTPUT);
+    pinMode(PIN_GPS_STANDBY, OUTPUT);
+    digitalWrite(PIN_GPS_STANDBY, LOW);
 }
 
 void variant_shutdown()
 {
+    digitalWrite(PIN_GPS_STANDBY, LOW);
     configureWakeOnPress(CANCEL_BUTTON_PIN);
 }

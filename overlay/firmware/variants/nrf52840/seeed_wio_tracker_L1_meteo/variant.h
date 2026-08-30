@@ -86,16 +86,9 @@ static const uint8_t SCL = PIN_WIRE_SCL;
 #define AREF_VOLTAGE 3.6
 #define NRF_APM
 
-#define GPS_L76K
-#ifdef GPS_L76K
-#define GPS_TX_PIN D6
-#define GPS_RX_PIN D7
-#define HAS_GPS 1
-#define GPS_BAUDRATE 9600
-#define GPS_THREAD_INTERVAL 50
-#define PIN_SERIAL1_RX GPS_RX_PIN
-#define PIN_SERIAL1_TX GPS_TX_PIN
 #define PIN_GPS_STANDBY D0
+#ifndef HAS_GPS
+#define HAS_GPS 0
 #endif
 
 #define PIN_QSPI_SCK (21)
@@ -113,6 +106,8 @@ static const uint8_t SCL = PIN_WIRE_SCL;
 #ifdef __cplusplus
 extern "C" {
 #endif
+#define PIN_SERIAL1_RX (-1)
+#define PIN_SERIAL1_TX (-1)
 #define PIN_SERIAL2_RX (-1)
 #define PIN_SERIAL2_TX (-1)
 #ifdef __cplusplus
