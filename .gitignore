@@ -1,6 +1,8 @@
-firmware/
-station_meteo_client_web/
-station_meteo_client_android/
+# Clones séparés à la racine uniquement (ne pas ignorer overlay/firmware/).
+/firmware/
+/station_meteo_client_web/
+/station_meteo_client_android/
 .cursor/
 .pio/
+__pycache__/
 *.uf2
