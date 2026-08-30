@@ -158,13 +158,15 @@ Connexions (Chromium, `./start_StMet.sh`) :
 ```
 
 - Démarre Vite (`pnpm --filter meshtastic-web dev`) sur **http://127.0.0.1:5173/**
+- Écoute `0.0.0.0` par défaut (accès Cursor / LAN) ; l’URL affichée reste le loopback
 - Ouvre **Chromium** (flags Web Bluetooth + Web Serial) sur cette URL
 
 | Variable | Effet |
 | --- | --- |
 | `STMET_NO_BROWSER=1` | Serveur seul, pas de Chromium |
 | `STMET_PORT` | Port (défaut `5173`) |
-| `STMET_HOST` | Hôte (défaut `127.0.0.1`) |
+| `STMET_HOST` | Hôte de l’URL / health-check (défaut `127.0.0.1`) |
+| `STMET_BIND` | Interface d’écoute Vite (défaut `0.0.0.0`) |
 
 Le navigateur intégré de Cursor n’expose pas Web Serial / Web Bluetooth.
 
