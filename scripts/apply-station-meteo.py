@@ -268,6 +268,35 @@ def apply_firmware(fw: Path) -> None:
     )
     _replace_once(
         nodedb,
+        """#ifdef STATION_METEO
+    if (config.lora.ignore_mqtt || !config.lora.config_ok_to_mqtt) {
+        config.lora.ignore_mqtt = false;
+        config.lora.config_ok_to_mqtt = true;
+        saveToDisk(SEGMENT_CONFIG);
+    }
+#endif
+""",
+        """#ifdef STATION_METEO
+    {
+        bool saveConfig = false;
+        if (config.lora.ignore_mqtt || !config.lora.config_ok_to_mqtt) {
+            config.lora.ignore_mqtt = false;
+            config.lora.config_ok_to_mqtt = true;
+            saveConfig = true;
+        }
+        // localPosition n'est restauré qu'après loadFromDisk : se fier à fixed_position.
+        // Ne pas forcer DISABLED ici (ça casserait une relocalisation gps_mode=ENABLED).
+        if (!config.position.fixed_position)
+            config.position.gps_mode = meshtastic_Config_PositionConfig_GpsMode_ENABLED;
+        if (saveConfig)
+            saveToDisk(SEGMENT_CONFIG);
+    }
+#endif
+""",
+        "NodeDB GPS one-shot hunt or sleep",
+    )
+    _replace_once(
+        nodedb,
         """    initModuleConfigIntervals();
 }""",
         """    initModuleConfigIntervals();
@@ -490,7 +519,7 @@ STATION_USERPREFS = {
     "USERPREFS_CHANNEL_3_PRECISION": "0",
     "USERPREFS_CHANNEL_3_PSK": "{ 0x01 }",
     "USERPREFS_CHANNEL_3_UPLINK_ENABLED": "false",
-    "USERPREFS_CONFIG_GPS_MODE": "meshtastic_Config_PositionConfig_GpsMode_NOT_PRESENT",
+    "USERPREFS_CONFIG_GPS_MODE": "meshtastic_Config_PositionConfig_GpsMode_ENABLED",
     "USERPREFS_CONFIG_LORA_IGNORE_MQTT": "false",
     "USERPREFS_CONFIG_LORA_REGION": "meshtastic_Config_LoRaConfig_RegionCode_EU_868",
     "USERPREFS_CONFIG_OWNER_LONG_NAME": "42METOLM8Sensor- mini st",

@@ -54,7 +54,7 @@ Le script est idempotent. Il lit `VERSION`, injecte `STATION_METEO_VERSION` dans
 
 ## Matériel
 
-- **L1 Pro** : boîtier, batterie, entrée solaire USB-C / solaire / 3,7 V (PMIC Seeed). GPS L76K **hors firmware** (`HAS_GPS=0`) ; `PIN_GPS_STANDBY` forcé bas pour le mettre en veille. Grove I2C `Wire1` : SDA D18, SCL D17.
+- **L1 Pro** : boîtier, batterie, entrée solaire USB-C / solaire / 3,7 V (PMIC Seeed). GPS L76K **one-shot** : allumé au boot tant que la station n’est pas géolocalisée, puis éteint (`gps_mode = DISABLED` + `PIN_GPS_STANDBY`) une fois la position figée. Grove I2C `Wire1` : SDA D18, SCL D17.
 - **Pas d’écran** : ne pas flasher `seeed_wio_tracker_L1_eink` ni compter sur l’OLED du variant L1 stock (`HAS_SCREEN` / `USE_SSD1306`).
 - **BME688** : adresse I2C `0x76` ou `0x77`. Driver firmware `BME680Sensor` (Adafruit BME680). Grandeurs : température °C, humidité %, pression hPa, résistance gaz Ω, IAQ 0–500, CO2 estimé ppm (`400 + IAQ × 4`, pas BSEC Bosch).
 - Tension batterie : ADC `PIN_VBAT` + `BAT_READ`, télémétrie power activée.
@@ -76,7 +76,16 @@ pio run -e seeed_wio_tracker_L1_meteo
 # Sinon : pio run -e seeed_wio_tracker_L1_meteo -t upload   (1200 bps / nrfutil, pas esptool)
 ```
 
-Allègement **à la compile** : `HAS_SCREEN=0`, `HAS_GPS=0`, `MESHTASTIC_EXCLUDE_GPS` (L76K forcé en standby), exclusions MQTT / Wi‑Fi / ATAK / canned / store-forward / paxcounter / détection / waypoint / voisinage / traceroute / notifs / replybot / dropzone / status / remote hardware / série module / health / air quality / accéléro. Conservé : LoRa, BLE, I2C, BME688 uniquement, télémétrie power, admin, PKI, messages.
+Allègement **à la compile** : `HAS_SCREEN=0`, exclusions MQTT / Wi‑Fi / ATAK / canned / store-forward / paxcounter / détection / waypoint / voisinage / traceroute / notifs / replybot / dropzone / status / remote hardware / série module / health / air quality / accéléro. Conservé : LoRa, BLE, I2C, **GPS L76K one-shot**, BME688 uniquement, télémétrie power, admin, PKI, messages.
+
+### GPS one-shot (économie de batterie)
+
+Le L76K n’est **pas** laissé allumé en continu (incompatible avec `is_power_saving` : un réveil nRF52 ≈ reboot).
+
+1. **Pas de position figée** (`fixed_position` faux) → `gps_mode = ENABLED`, chasse d’un fix (timeout **8 min**). Sans fix, le GPS est éteint **pour cette session** seulement ; le prochain cold boot réessaie (le `DISABLED` n’est pas persisté).
+2. **Fix valide** → `setLocalPosition` + `fixed_position = true` + `gps_mode = DISABLED` + `gps->disable()` (standby matériel) + `saveToDisk`.
+3. **Boots suivants** (y compris réveil `is_power_saving`) → GPS éteint, position restaurée depuis LittleFS.
+4. **Relocaliser** : réactiver le GPS dans le client (`gps_mode = ENABLED`) puis rebooter — le module re-pinera et ré-éteindra. Un factory reset relance aussi la chasse.
 
 Fichiers overlay : `overlay/firmware/variants/nrf52840/seeed_wio_tracker_L1_meteo/` (dont un README variant), `StationMeteoPrefs`, `StationMeteoModule` (port `PRIVATE_APP`), `WeatherAlertPolicy.h`. Pas d’édition de `src/mesh/generated/`.
 
@@ -118,7 +127,7 @@ Cibles au premier boot / factory reset. Alignées sur [Gaulix.fr](https://gaulix
 | `owner.is_unmessagable` | **`false`** (STATION_METEO ; le rôle SENSOR stock force `true`) |
 | `power.is_power_saving` | `true` (sommeil = intervalle du mode télémétrie) |
 | Bluetooth | activé, PIN fixe `123456` |
-| GPS | `DISABLED` |
+| GPS | one-shot : `ENABLED` jusqu’au premier fix, puis `DISABLED` (position figée) |
 | Hop | **3** (`HOP_RELIABLE`) |
 | Région | `EU_868` |
 | Modem preset | `LONG_MODERATE` (use preset = true) |
@@ -220,7 +229,7 @@ Clone : [`station_meteo_client_android/`](station_meteo_client_android/). Adapta
 - Client web : USB, Bluetooth, IP ; Météo + Plage de mesure.
 - Client web : titre d’onglet **MStMet - Configurateur** ; marque **MStM - Mini Station Météo** / **Via Meshtastic** ; logo mini station ; configuration module sans notif externe / portée / canned / audio / lumière / paxcounter / TAK / status.
 - Météo / Réglages consultables sans nœud ; versioning via fichier `VERSION`.
-- Firmware `seeed_wio_tracker_L1_meteo` : GPS hors image, BME688 seul ; compile PlatformIO **SUCCESS** (RAM 40,1 %, flash 54,6 %) ; UF2 [release v0.1.0](https://github.com/F4EED/station_meteo_mini/releases/tag/v0.1.0) (à recréer pour flasher cet allègement).
+- Firmware `seeed_wio_tracker_L1_meteo` : GPS L76K **one-shot** (allumé le temps d’un fix, puis éteint), BME688 seul ; LoRa MQTT forcé (`ignore_mqtt=false`, `ok_to_mqtt=true`). UF2 [release v0.1.0](https://github.com/F4EED/station_meteo_mini/releases/tag/v0.1.0) à recréer pour flasher ces changements.
 
 ## Historique
 
@@ -228,4 +237,4 @@ Clone : [`station_meteo_client_android/`](station_meteo_client_android/). Adapta
 
 **2026-08-29** — Firmware dans `firmware/` (pas ThinkNode). Premier UF2 flashé. Client web USB / Web Bluetooth / IP.
 
-**2026-08-30** — Factory reset USB. Correctif télémétrie opt-in 2.8. Overlay versionné dans `station_meteo_mini`. Client web **MStMet** : titre **MStMet - Configurateur** ; marque **MStM - Mini Station Météo** / **Via Meshtastic** ; logo / icône point de relevé (mini station) ; configuration module allégée ; Météo / Réglages sans nœud. Semver `VERSION` **0.1.0**. Firmware allégé : GPS hors image (L76K standby), BME688 seul, modules inutiles exclus. Compile **SUCCESS** RAM 40,1 %, flash 54,6 % (avant allègement : 40,7 % / 71,7 %). [Release GitHub v0.1.0](https://github.com/F4EED/station_meteo_mini/releases/tag/v0.1.0) (UF2 — reflasher pour bénéficier de l’allègement).
+**2026-08-30** — Factory reset USB. Correctif télémétrie opt-in 2.8. Overlay versionné dans `station_meteo_mini`. Client web **MStMet** : titre **MStMet - Configurateur** ; marque **MStM - Mini Station Météo** / **Via Meshtastic** ; logo / icône point de relevé (mini station) ; configuration module allégée ; Météo / Réglages sans nœud. Semver `VERSION` **0.1.0**. Firmware allégé : BME688 seul, modules inutiles exclus. GPS L76K **one-shot** (chasse d’un fix au boot, puis extinction pour la batterie). Compile **SUCCESS** RAM 40,1 %, flash 54,6 % **sans** GPS dans l’image ; à recréer après réintégration GPS. [Release GitHub v0.1.0](https://github.com/F4EED/station_meteo_mini/releases/tag/v0.1.0) (UF2 ancien — reflasher après nouvelle compile).
