@@ -1,6 +1,6 @@
 # Mini station météo Meshtastic
 
-Station météo autonome **minimum**, sans écran, nœud LoRa unique. Version projet : **0.1.0**.
+Station météo autonome **minimum**, sans écran, nœud LoRa unique. Version projet : **0.1.0** (`VERSION`).
 
 | | |
 | --- | --- |
@@ -16,8 +16,11 @@ Quatre dépôts GitHub, un clone local par composant. **Pas de submodule.**
 
 ```
 Station-météo/                         →  F4EED/station_meteo_mini     (ce README)
+  VERSION                              ← semver projet (source unique)
   start_StMet.sh                       ← lance le client web + Chromium
-  overlay/                             ← sources station (variant, prefs, UI)
+  overlay/                             ← sources station (variant, prefs, UI, README overlay)
+  overlay/web/README.md                ← note client web
+  overlay/firmware/.../README.md       ← note variant L1 météo
   scripts/apply-station-meteo.py       ← copie l’overlay dans les clones
   firmware/                            →  F4EED/station_meteo_firmware
   station_meteo_client_web/            →  F4EED/station_meteo_client_web
@@ -46,7 +49,7 @@ git clone https://github.com/F4EED/station_meteo_client_android.git
 python3 scripts/apply-station-meteo.py all
 ```
 
-Le script est idempotent. Il ajoute le variant `seeed_wio_tracker_L1_meteo`, la politique de seuils, les prefs persistées, et le client web (Météo / Plage de mesure / USB·BT·IP).
+Le script est idempotent. Il lit `VERSION`, injecte `STATION_METEO_VERSION` dans le variant PlatformIO, ajoute le variant `seeed_wio_tracker_L1_meteo`, la politique de seuils, les prefs persistées, et le client web (titre d’onglet **Mini Station Meteo -Configurateur**, Météo / Plage de mesure / USB·BT·IP, configuration module allégée).
 
 ## Matériel
 
@@ -72,11 +75,24 @@ pio run -e seeed_wio_tracker_L1_meteo
 
 Allègement **à la compile** : `HAS_SCREEN=0`, `MESHTASTIC_EXCLUDE_SCREEN`, exclusions MQTT / Wi‑Fi / ATAK / canned messages / store & forward / paxcounter / detection sensor / waypoint / neighbor info / traceroute / notifs externes. Conservé : LoRa, BLE, I2C, télémétrie environnement + power, admin, PKI.
 
-Fichiers overlay : `overlay/firmware/variants/nrf52840/seeed_wio_tracker_L1_meteo/`, `StationMeteoPrefs`, `StationMeteoModule` (port `PRIVATE_APP`), `WeatherAlertPolicy.h`. Pas d’édition de `src/mesh/generated/`.
+Fichiers overlay : `overlay/firmware/variants/nrf52840/seeed_wio_tracker_L1_meteo/` (dont un README variant), `StationMeteoPrefs`, `StationMeteoModule` (port `PRIVATE_APP`), `WeatherAlertPolicy.h`. Pas d’édition de `src/mesh/generated/`.
 
 Pairing BLE headless : PIN fixe Meshtastic (souvent `123456`).
 
-### Factory reset et télémétrie (Meshtastic 2.8)
+## Versioning
+
+Source unique : fichier [`VERSION`](VERSION) (semver, actuellement **0.1.0**).
+
+| Canal | Rôle |
+| --- | --- |
+| `VERSION` | Semver du projet mini station (firmware overlay + client web overlay) |
+| `-D STATION_METEO_VERSION` | Injecté dans `platformio.ini` du variant par `apply-station-meteo.py` |
+| `StationMeteoPrefs.version` | Version du **blob** LittleFS (entier 1 = layout 180 octets), indépendante du semver |
+| Changelog ci-dessous | Notes de release |
+
+Pour bump : éditer `VERSION`, relancer `python3 scripts/apply-station-meteo.py all`, mettre à jour ce README (en-tête + changelog).
+
+## Factory reset et télémétrie (Meshtastic 2.8)
 
 Les défauts `userPrefs` s’appliquent au **premier boot** et après **factory reset** seulement.
 
@@ -143,6 +159,10 @@ Sans horloge valide : mode Normal = 21600 s. `is_power_saving` reste `true` ; se
 
 Fork dans [`station_meteo_client_web/`](station_meteo_client_web/). Client **simplifié** : télémétrie BME688 / batterie, réglages + **Plage de mesure**. Messagerie / nœuds / carte restent dans le code mais hors navigation.
 
+Titre d’onglet du navigateur (Vite `index.html`) : **Mini Station Meteo -Configurateur**.
+
+**Réglages → Configuration du module** — onglets **conservés** : MQTT, série, store & forward, télémétrie, voisinage, capteur de détection, matériel distant, trafic. **Masqués** : notification externe, test de portée, message pré-enregistré, audio, lumière ambiante, paxcounter, TAK, status message. Les fichiers upstream des modules restent ; le script d’apply filtre la liste. Sur le firmware `seeed_wio_tracker_L1_meteo`, MQTT / store-forward / voisinage / détection sont aussi exclus à la compile : les onglets UI correspondants ne pilotent rien sur ce nœud.
+
 Connexions (Chromium, `./start_StMet.sh`) :
 
 | Onglet | API |
@@ -151,7 +171,7 @@ Connexions (Chromium, `./start_StMet.sh`) :
 | **Bluetooth** | Web Bluetooth |
 | **IP** | HTTP(S) |
 
-Sans nœud branché, **Météo** et **Réglages → Plage de mesure** restent consultables (valeurs `—`, bouton **Connecter**). USB / Bluetooth ne marchent que dans Chromium **sur la machine où la carte est branchée**.
+Sans nœud branché, **Météo**, **Réglages → Plage de mesure** et la liste d’onglets **Configuration du module** restent consultables (valeurs `—`, bouton **Connecter** ; formulaires module vides tant qu’un nœud n’est pas lié). USB / Bluetooth ne marchent que dans Chromium **sur la machine où la carte est branchée**.
 
 ### Lancer
 
@@ -188,6 +208,9 @@ Clone : [`station_meteo_client_android/`](station_meteo_client_android/). Adapta
 - Factory reset 2.8 : télémétrie environnement + batterie rétablie (`STATION_METEO`).
 - `start_StMet.sh` : client web + Chromium (Web Serial / Web Bluetooth).
 - Client web : USB, Bluetooth, IP ; Météo + Plage de mesure.
+- Client web : titre d’onglet **Mini Station Meteo -Configurateur** ; configuration module sans notif externe / portée / canned / audio / lumière / paxcounter / TAK / status.
+- Météo / Réglages consultables sans nœud ; versioning via fichier `VERSION`.
+- Firmware `seeed_wio_tracker_L1_meteo` : compile PlatformIO OK (UF2 nRF52).
 
 ## Historique
 
@@ -195,4 +218,4 @@ Clone : [`station_meteo_client_android/`](station_meteo_client_android/). Adapta
 
 **2026-08-29** — Firmware dans `firmware/` (pas ThinkNode). Premier UF2 flashé. Client web USB / Web Bluetooth / IP.
 
-**2026-08-30** — Factory reset USB. Correctif télémétrie opt-in 2.8. Overlay versionné dans `station_meteo_mini`.
+**2026-08-30** — Factory reset USB. Correctif télémétrie opt-in 2.8. Overlay versionné dans `station_meteo_mini`. Client web : titre **Mini Station Meteo -Configurateur** ; configuration module allégée ; Météo / Réglages sans nœud. Semver `VERSION` **0.1.0**. Firmware L1 météo compilé (UF2).

@@ -11,12 +11,40 @@ Usage (depuis la racine station_meteo_mini) :
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 OVERLAY = ROOT / "overlay"
+
+
+def project_version() -> str:
+    path = ROOT / "VERSION"
+    if not path.is_file():
+        raise SystemExit("fichier VERSION manquant à la racine")
+    ver = path.read_text(encoding="utf-8").strip().splitlines()[0].strip()
+    if not ver:
+        raise SystemExit("VERSION vide")
+    return ver
+
+
+def inject_station_meteo_version(ini: Path, ver: str) -> None:
+    text = ini.read_text(encoding="utf-8")
+    updated, n = re.subn(
+        r'-D STATION_METEO_VERSION=\\"[^"]*\\"',
+        f'-D STATION_METEO_VERSION=\\"{ver}\\"',
+        text,
+        count=1,
+    )
+    if n == 0:
+        raise SystemExit(f"STATION_METEO_VERSION introuvable dans {ini}")
+    if updated != text:
+        ini.write_text(updated, encoding="utf-8")
+        print(f"  version firmware {ver} → {ini}")
+    else:
+        print(f"  skip (version déjà {ver}) {ini.name}")
 
 
 def _replace_once(path: Path, old: str, new: str, label: str) -> None:
@@ -54,6 +82,72 @@ def _copy_tree(src: Path, dest: Path) -> None:
     print(f"  copy {src.relative_to(OVERLAY)} → {dest}")
 
 
+def _prepend_once(path: Path, marker: str, block: str, label: str) -> None:
+    if not path.is_file():
+        print(f"  skip (absent) {label}")
+        return
+    text = path.read_text(encoding="utf-8")
+    if marker in text:
+        print(f"  skip (déjà appliqué) {label}")
+        return
+    path.write_text(block + text, encoding="utf-8")
+    print(f"  prepend {label}")
+
+
+FIRMWARE_README_BANNER = """<!-- STATION_METEO -->
+# Mini station météo (overlay)
+
+Clone firmware pour la **mini station météo** (Seeed Wio Tracker L1 Pro headless, BME688).
+
+- Env PlatformIO : `seeed_wio_tracker_L1_meteo`
+- Détail variant : [`variants/nrf52840/seeed_wio_tracker_L1_meteo/README.md`](variants/nrf52840/seeed_wio_tracker_L1_meteo/README.md)
+- Cadrage projet : [`../README.md`](../README.md) (`station_meteo_mini`)
+- Appliquer l’overlay : `python3 ../scripts/apply-station-meteo.py firmware`
+
+Le texte Meshtastic officiel suit.
+
+<!-- /STATION_METEO -->
+
+"""
+
+WEB_README_BANNER = """<!-- STATION_METEO -->
+# Mini Station Meteo -Configurateur
+
+Fork **station météo** du client Meshtastic web (overlay `station_meteo_mini`).
+
+| | |
+| --- | --- |
+| **Onglet navigateur** | Mini Station Meteo -Configurateur |
+| **Nav** | Météo · Réglages (Plage de mesure) |
+| **Connexions** | USB · Bluetooth · IP |
+| **Lancer** | depuis le parapluie : `./start_StMet.sh` → http://127.0.0.1:5173/ |
+
+**Configuration du module** — masqués : notification externe, test de portée, message pré-enregistré, audio, lumière ambiante, paxcounter, TAK, status message.
+
+Cadrage : [`../README.md`](../README.md). Appliquer : `python3 ../scripts/apply-station-meteo.py web`.
+
+Le README Meshtastic officiel suit.
+
+<!-- /STATION_METEO -->
+
+"""
+
+WEB_APPS_README_BANNER = """<!-- STATION_METEO -->
+# Mini Station Meteo -Configurateur
+
+App web station météo. Titre d’onglet Vite : **Mini Station Meteo -Configurateur**.
+
+Lancer : `pnpm --filter meshtastic-web dev --host 0.0.0.0 --port 5173`  
+ou `./start_StMet.sh` depuis `station_meteo_mini`.
+
+Cadrage : [`../../../README.md`](../../../README.md).
+
+<!-- /STATION_METEO -->
+
+"""
+
+
+
 def apply_firmware(fw: Path) -> None:
     if not (fw / "src/mesh/NodeDB.cpp").is_file():
         raise SystemExit(f"pas un clone firmware : {fw}")
@@ -62,6 +156,15 @@ def apply_firmware(fw: Path) -> None:
     _copy_tree(
         src_overlay / "variants/nrf52840/seeed_wio_tracker_L1_meteo",
         fw / "variants/nrf52840/seeed_wio_tracker_L1_meteo",
+    )
+    ver = project_version()
+    inject_station_meteo_version(
+        OVERLAY / "firmware/variants/nrf52840/seeed_wio_tracker_L1_meteo/platformio.ini",
+        ver,
+    )
+    inject_station_meteo_version(
+        fw / "variants/nrf52840/seeed_wio_tracker_L1_meteo/platformio.ini",
+        ver,
     )
     for name in (
         "StationMeteoPrefs.h",
@@ -254,6 +357,12 @@ def apply_firmware(fw: Path) -> None:
     )
 
     merge_userprefs(fw / "userPrefs.jsonc")
+    _prepend_once(
+        fw / "README.md",
+        "<!-- STATION_METEO -->",
+        FIRMWARE_README_BANNER,
+        "firmware README banner",
+    )
     print("firmware overlay OK")
 
 
@@ -553,11 +662,113 @@ import { MeasurementRange } from "@pages/Settings/MeasurementRange.tsx";""",
         ) : (""",
         "sidebar connect button",
     )
+    _replace_once(
+        sidebar,
+        """  const { metadata, setDialogOpen } = useDevice();
+  const numUnread = useTotalUnread();
+  const allNodes = useNodesAsProto();
+  const { setCommandPaletteOpen } = useAppStore();
+  const myNode = useMyNodeAsProto();""",
+        """  const { deviceId } = useDeviceContext();
+  const device = useDeviceStore((s) => s.getDevice(deviceId));
+  const allNodes = useNodesAsProto();
+  const { setCommandPaletteOpen } = useAppStore();
+  const myNode = useMyNodeAsProto();""",
+        "sidebar no auto-create device",
+    )
+    _replace_once(
+        sidebar,
+        """import {
+  type Page,
+  useActiveConnection,
+  useAppStore,
+  useDefaultConnection,
+  useDevice,
+  useSidebar,
+} from "@core/stores";
+import { cn } from "@core/utils/cn.ts";
+import { useTotalUnread } from "@meshtastic/sdk-react";""",
+        """import {
+  type Page,
+  useActiveConnection,
+  useAppStore,
+  useDefaultConnection,
+  useDeviceContext,
+  useDeviceStore,
+  useSidebar,
+} from "@core/stores";
+import { cn } from "@core/utils/cn.ts";""",
+        "sidebar optional device imports",
+    )
+    _replace_once(
+        sidebar,
+        "  const myMetadata = metadata.get(0);",
+        "  const myMetadata = device?.metadata.get(0);",
+        "sidebar optional metadata",
+    )
+    _replace_once(
+        sidebar,
+        '            setDialogOpen={() => setDialogOpen("deviceName", true)}',
+        '            setDialogOpen={() => device?.setDialogOpen("deviceName", true)}',
+        "sidebar optional setDialogOpen",
+    )
+    _replace_once(
+        sidebar,
+        """import { SidebarButton } from "@components/UI/Sidebar/SidebarButton.tsx";
+import { SidebarSection } from "@components/UI/Sidebar/SidebarSection.tsx";
+import { Spinner } from "@components/UI/Spinner.tsx";
+import { Subtle } from "@components/UI/Typography/Subtle.tsx";
+""",
+        """import { SidebarButton } from "@components/UI/Sidebar/SidebarButton.tsx";
+import { SidebarSection } from "@components/UI/Sidebar/SidebarSection.tsx";
+""",
+        "sidebar unused spinner/subtle",
+    )
 
     app = web / "apps/web/src/App.tsx"
     _replace_once(
         app,
-        """              {device ? (
+        """import { ErrorPage } from "@components/UI/ErrorPage.tsx";
+import Footer from "@components/UI/Footer.tsx";
+import { useTheme } from "@core/hooks/useTheme.ts";
+import { SidebarProvider, useAppStore, useDeviceStore } from "@core/stores";
+import { Connections } from "@pages/Connections/index.tsx";
+import { Outlet } from "@tanstack/react-router";
+import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
+import { ErrorBoundary } from "react-error-boundary";
+import { MapProvider } from "react-map-gl/maplibre";
+
+export function App() {
+  useTheme();
+
+  const { getDevice } = useDeviceStore();
+  const { selectedDeviceId } = useAppStore();
+
+  const device = getDevice(selectedDeviceId);""",
+        """import { ErrorPage } from "@components/UI/ErrorPage.tsx";
+import { useTheme } from "@core/hooks/useTheme.ts";
+import { SidebarProvider, useAppStore, useDeviceStore } from "@core/stores";
+import { useActiveClient } from "@meshtastic/sdk-react";
+import { Outlet } from "@tanstack/react-router";
+import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
+import { ErrorBoundary } from "react-error-boundary";
+import { MapProvider } from "react-map-gl/maplibre";
+
+export function App() {
+  useTheme();
+
+  const { getDevice } = useDeviceStore();
+  const { selectedDeviceId } = useAppStore();
+  const client = useActiveClient();
+
+  const device = getDevice(selectedDeviceId);""",
+        "App imports + client hook",
+    )
+    _replace_first(
+        app,
+        [
+            (
+                """              {device ? (
                 <div className="h-full flex w-full">
                   <DialogManager />
                   <KeyBackupReminder />
@@ -573,7 +784,22 @@ import { MeasurementRange } from "@pages/Settings/MeasurementRange.tsx";""",
                   <Footer />
                 </>
               )}""",
-        """              <div className="h-full flex w-full">
+                """              <div className="h-full flex w-full">
+                {device && client ? (
+                  <>
+                    <DialogManager />
+                    <KeyBackupReminder />
+                    <RegionSetupReminder />
+                    <CommandPalette />
+                  </>
+                ) : null}
+                <MapProvider>
+                  <Outlet />
+                </MapProvider>
+              </div>""",
+            ),
+            (
+                """              <div className="h-full flex w-full">
                 <DialogManager />
                 {device ? (
                   <>
@@ -586,7 +812,176 @@ import { MeasurementRange } from "@pages/Settings/MeasurementRange.tsx";""",
                   <Outlet />
                 </MapProvider>
               </div>""",
+                """              <div className="h-full flex w-full">
+                {device && client ? (
+                  <>
+                    <DialogManager />
+                    <KeyBackupReminder />
+                    <RegionSetupReminder />
+                    <CommandPalette />
+                  </>
+                ) : null}
+                <MapProvider>
+                  <Outlet />
+                </MapProvider>
+              </div>""",
+            ),
+        ],
         "App always Outlet disconnected",
+    )
+
+    reminder = web / "apps/web/src/components/RegionSetupReminder.tsx"
+    _replace_once(
+        reminder,
+        'import { useIsRegionUnset } from "@meshtastic/sdk-react";',
+        """import { useActiveClient, useSignal } from "@meshtastic/sdk-react";""",
+        "RegionSetupReminder safe imports",
+    )
+    text_reminder = reminder.read_text(encoding="utf-8")
+    if "REGION_UNSET_FALSE" in text_reminder:
+        print("  skip (déjà appliqué) RegionSetupReminder no throw without client")
+    else:
+        _replace_once(
+            reminder,
+            """export const RegionSetupReminder = (): null => {
+  const isRegionUnset = useIsRegionUnset();""",
+            """const REGION_UNSET_FALSE = {
+  value: false,
+  peek: () => false,
+  subscribe: () => () => {},
+} as const;
+
+export const RegionSetupReminder = (): null => {
+  const client = useActiveClient();
+  const isRegionUnset = useSignal(
+    client?.config.isRegionUnset ?? REGION_UNSET_FALSE,
+  );""",
+            "RegionSetupReminder no throw without client",
+        )
+
+    _replace_once(
+        settings,
+        """import {
+  LayersIcon,
+  RadioTowerIcon,
+  RefreshCwIcon,
+  RouterIcon,
+  SaveIcon,
+  SaveOff,
+} from "lucide-react";""",
+        """import {
+  Cable,
+  LayersIcon,
+  RadioTowerIcon,
+  RefreshCwIcon,
+  RouterIcon,
+  SaveIcon,
+  SaveOff,
+} from "lucide-react";""",
+        "settings Cable icon",
+    )
+    _replace_once(
+        settings,
+        """  const activeSection =
+    sections.find((section) =>
+      routerState.location.pathname.includes(`/settings/${section.key}`),
+    ) ?? sections[0];""",
+        """  const activeSection =
+    sections.find((section) =>
+      routerState.location.pathname.includes(`/settings/${section.key}`),
+    ) ??
+    (!editor
+      ? (sections.find((section) => section.key === "measurement") ??
+        sections[0])
+      : sections[0]);""",
+        "settings default measurement when disconnected",
+    )
+    _replace_first(
+        settings,
+        [
+            (
+                "      {ActiveComponent && <ActiveComponent onFormInit={onFormInit} />}",
+                """      {ActiveComponent &&
+      (activeSection?.key === "measurement" ||
+        activeSection?.key === "module" ||
+        editor) ? (
+        <ActiveComponent onFormInit={onFormInit} />
+      ) : (
+        <div className="flex flex-col items-center justify-center gap-3 p-8 text-sm text-slate-500">
+          <p>{t("measurementRange.notConnected")}</p>
+          <button
+            type="button"
+            className="inline-flex items-center gap-2 rounded-md bg-slate-900 px-3 py-2 text-sm text-white dark:bg-slate-50 dark:text-slate-900"
+            onClick={() => navigate({ to: "/connections" })}
+          >
+            <Cable size={16} />
+            {t("ui:navigation.connect")}
+          </button>
+        </div>
+      )}""",
+            ),
+            (
+                '      {ActiveComponent && (activeSection?.key === "measurement" || editor) ? (',
+                """      {ActiveComponent &&
+      (activeSection?.key === "measurement" ||
+        activeSection?.key === "module" ||
+        editor) ? (""",
+            ),
+        ],
+        "settings skip radio forms without node",
+    )
+
+    vite_cfg = web / "apps/web/vite.config.ts"
+    _replace_once(
+        vite_cfg,
+        'title: isTest ? "Meshtastic Web (TEST)" : "Meshtastic Web",',
+        'title: "Mini Station Meteo -Configurateur",',
+        "vite html title",
+    )
+
+    module_cfg = web / "apps/web/src/pages/Settings/ModuleConfig.tsx"
+    _replace_once(
+        module_cfg,
+        """} as const;
+
+export const ModuleConfig = ({ onFormInit }: ConfigProps) => {""",
+        """} as const;
+
+const STATION_METEO_HIDDEN_MODULE_CASES = new Set<string>([
+  "externalNotification",
+  "rangeTest",
+  "cannedMessage",
+  "audio",
+  "ambientLighting",
+  "paxcounter",
+  "tak",
+  "statusmessage",
+]);
+
+export const ModuleConfig = ({ onFormInit }: ConfigProps) => {""",
+        "ModuleConfig hidden set",
+    )
+    _replace_once(
+        module_cfg,
+        """      { case: "tak", label: t("page.tabTak"), element: Tak },
+    ],
+    [t],
+  );""",
+        """      { case: "tak", label: t("page.tabTak"), element: Tak },
+    ].filter((tab) => !STATION_METEO_HIDDEN_MODULE_CASES.has(tab.case)),
+    [t],
+  );""",
+        "ModuleConfig filter tabs",
+    )
+    _replace_once(
+        module_cfg,
+        """          <Suspense fallback={<Spinner size="lg" className="my-5" />}>
+            <tab.element onFormInit={onFormInit} />
+          </Suspense>""",
+        """          <Suspense fallback={<Spinner size="lg" className="my-5" />}>
+            {editor ? <tab.element onFormInit={onFormInit} /> : null}
+          </Suspense>""",
+        "ModuleConfig forms need editor",
     )
 
     dialog = web / "apps/web/src/components/Dialog/AddConnectionDialog/AddConnectionDialog.tsx"
@@ -671,7 +1066,7 @@ import { MeasurementRange } from "@pages/Settings/MeasurementRange.tsx";""",
             "description": "Moyenne normale, plage basse/haute et seuils (très bas → très haut) pour chaque grandeur BME688. Les valeurs sont enregistrées sur le nœud.",
             "refresh": "Lire le nœud",
             "save": "Enregistrer sur le nœud",
-            "resetDefaults": "Défauts 0.1.0",
+            "resetDefaults": f"Défauts {project_version()}",
             "notConnected": "Pas de nœud connecté",
             "sendFailed": "Échec d’envoi",
             "quantity": {
@@ -701,7 +1096,7 @@ import { MeasurementRange } from "@pages/Settings/MeasurementRange.tsx";""",
             "description": "Normal mean, low/high range and thresholds (very low → very high) for each BME688 quantity. Values live on the node.",
             "refresh": "Read node",
             "save": "Save to node",
-            "resetDefaults": "0.1.0 defaults",
+            "resetDefaults": f"{project_version()} defaults",
             "notConnected": "No node connected",
             "sendFailed": "Send failed",
             "quantity": {
@@ -769,6 +1164,19 @@ import { MeasurementRange } from "@pages/Settings/MeasurementRange.tsx";""",
         def cmd_en(d):
             d.setdefault("goto", {}).setdefault("command", {})["meteo"] = "Weather"
         _patch_json(locales / "en/commandPalette.json", cmd_en)
+
+    _prepend_once(
+        web / "README.md",
+        "<!-- STATION_METEO -->",
+        WEB_README_BANNER,
+        "web README banner",
+    )
+    _prepend_once(
+        web / "apps/web/README.md",
+        "<!-- STATION_METEO -->",
+        WEB_APPS_README_BANNER,
+        "apps/web README banner",
+    )
 
     print("web overlay OK")
 

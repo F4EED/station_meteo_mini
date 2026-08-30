@@ -66,6 +66,9 @@ export function MeasurementRange(_props: Props) {
       applyBytes(data.payload);
     };
     client.events.onMeshPacket.subscribe(handler);
+    return () => {
+      client.events.onMeshPacket.unsubscribe(handler);
+    };
   }, [client, applyBytes]);
 
   const send = async (bytes: Uint8Array) => {
