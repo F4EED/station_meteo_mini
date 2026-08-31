@@ -3,4 +3,7 @@ station_meteo_client_web/
 station_meteo_client_android/
 .cursor/
 .pio/
+.pnpm-store/
 *.uf2
+Station-meteo.desktop
+demarrer.bat
