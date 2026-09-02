@@ -49,6 +49,8 @@ git clone https://github.com/F4EED/station_meteo_client_android.git
 
 Dans chaque composant : `origin` = F4EED, `upstream` = dépôt Meshtastic officiel (resync / rebase).
 
+Reprise sur une autre machine : [`TRANSIT.md`](TRANSIT.md) (branches, clone Android `feat/station-meteo-client`, JDK 25 pour l’APK).
+
 ## Matériel
 
 - **L1 Pro** : boîtier, batterie, entrée solaire USB-C / solaire / 3,7 V (PMIC Seeed). GPS hardware présent, **désactivé** par défaut. Grove I2C `Wire1` : SDA D18, SCL D17.
@@ -87,7 +89,7 @@ Cibles au premier boot / factory reset. Alignées sur [Gaulix.fr](https://gaulix
 | Rôle | `SENSOR` |
 | `owner.is_unmessagable` | **`false`** (STATION_METEO ; le rôle SENSOR stock force `true`) |
 | `power.is_power_saving` | **dev : off** (`STATION_METEO_DEV_NO_SLEEP`) ; prod : `true` (sommeil = intervalle télémétrie) |
-| Bluetooth | activé (client web / future app Android) |
+| Bluetooth | activé (client web / app Android) |
 | GPS | `DISABLED` (L76K présent). Un fix GPS remet l’horloge. USB : heure du PC à la connexion (`set_time_only`, ne remplace pas un horodatage GPS). |
 | Hop | **3** (`HOP_RELIABLE`) |
 | Région | `EU_868` |
@@ -134,7 +136,7 @@ Défauts 0.1.0, réglables plus tard par l’app. Priorité **choc > alerte > no
 
 Sans horloge valide : mode Normal = 21600 s. `is_power_saving` reste `true` ; seul `environment_update_interval` change. Horloge : GPS si fix, sinon heure du PC à la connexion USB.
 
-Client web, dérivé de T + HR (pas de vent sur le BME688) : **point de rosée** Magnus–Tetens ; **température ressentie** = indice de chaleur NWS si T ≥ 27 °C, sinon température apparente Steadman (vent = 0). Gaz / IAQ / eCO2 : voir ci-dessus. Si gaz présent mais IAQ encore absente : repli client ; si T/HR/P sans gaz : « Chauffe gaz… ».
+Client web, dérivé de T + HR (pas de vent sur le BME688) : **point de rosée** Magnus–Tetens ; **température ressentie** = indice de chaleur NWS si T ≥ 27 °C, sinon température apparente Steadman (vent = 0). Gaz / IAQ / eCO2 : voir ci-dessus. Si gaz présent mais IAQ encore absente : repli client ; si T/HR/P sans gaz : « Chauffe gaz… ». Page Météo : pastille **vert / orange / rouge** à côté de chaque grandeur (dans la moyenne / un peu décalé / complètement décalé ; bandes défaut STMET).
 
 ## Client web
 
@@ -190,7 +192,17 @@ Ctrl+C dans le terminal arrête le serveur. Si le serveur tourne déjà, le scri
 
 ## Application Android
 
-Clone : [`station_meteo_client_android/`](station_meteo_client_android/). Dépôt [F4EED/station_meteo_client_android](https://github.com/F4EED/station_meteo_client_android) (base Meshtastic-Android). Adaptations station (IAQ, eCO2, seuils, BLE headless) **pas encore** commencées. En 0.1.0 les seuils sont des constantes firmware. Capteur : BME688 extérieur sous abri (`../README.md` § Télémétrie).
+Clone : [`station_meteo_client_android/`](station_meteo_client_android/). Dépôt [F4EED/station_meteo_client_android](https://github.com/F4EED/station_meteo_client_android) (base Meshtastic-Android).
+
+Client **simplifié** comme le web : **Météo**, **Connexions** (BLE / USB / IP), **Réglages**. Pas de messagerie, liste de nœuds ni carte. Télémétrie BME688 (T, HR, pression, gaz Ω, IAQ, eCO2) / batterie. PIN BLE usine : **123456**. `applicationId` : `fr.f4eed.stationmeteo`.
+
+```bash
+cd station_meteo_client_android
+./gradlew assembleFdroidDebug
+# APK : androidApp/build/outputs/apk/fdroid/debug/
+```
+
+Seuils mini/maxi (protocole STMET) : constantes firmware 0.1.x affichées en pastille **vert / orange / rouge** à côté de chaque grandeur (dans la moyenne / un peu décalé / complètement décalé). Capteur : BME688 extérieur sous abri (§ Télémétrie).
 
 ## Changelog
 
@@ -199,6 +211,7 @@ Clone : [`station_meteo_client_android/`](station_meteo_client_android/). Dépô
 - BME688 **extérieur sous abri**. IAQ dès warmup gaz ; eCO2 client `400 + IAQ × 4` ; repli depuis `gas_resistance`.
 - Install Linux / Windows, handshake USB `wantConfigId` 69420, icône Bureau.
 - UF2 `seeed_wio_tracker_L1_meteo` 0.1.1 (DFU TRACKER L1).
+- Client Android : Météo / Connexions / Réglages, `fr.f4eed.stationmeteo`.
 
 ### 0.1.0 — 2026-08-28 / 29
 
@@ -218,5 +231,9 @@ Clone : [`station_meteo_client_android/`](station_meteo_client_android/). Dépô
 **2026-08-29** — Firmware dans `firmware/` (pas ThinkNode). README unique à la racine. Archi GitHub : parapluie `station_meteo_mini` + trois forks. Défauts LoRa : Ignore MQTT **false**, OK to MQTT **true**. Premier UF2 `seeed_wio_tracker_L1_meteo` 0.1.0 (headless, Gaulix, seuils). Client web : USB / Web Bluetooth / IP.
 
 **2026-08-30** — Scripts d’install du client web : Linux (`install.sh`, Chrome/Chromium apt) et Windows 10/11 (`install.ps1` / `install.bat`). Raccourci Bureau + icône (`creer-icone.sh`, `assets/`). Handshake USB sans dump NodeDB ni manifeste LittleFS. Page Météo : point de rosée + température ressentie. Heure : PC à la connexion USB, GPS si fix.
+
+**2026-09-02** — Transit autre machine : [`TRANSIT.md`](TRANSIT.md). APK Android non produit ici (JDK 25).
+
+**2026-09-01** — Clients web et Android : pastille vert / orange / rouge à côté de chaque grandeur (dans la moyenne / un peu décalé / complètement décalé). Bandes défaut STMET 0.1.x.
 
 **2026-08-31** — BME688 **extérieur sous abri**. IAQ firmware dès warmup gaz (3+1 échantillons). Client : IAQ / eCO2 de repli depuis `gas_resistance` (fil en kΩ, UI en Ω). eCO2 = `400 + IAQ × 4` ppm (pas NDIR). UF2 IAQ flashé DFU `TRACKER L1`. Gaz sous abri typique 50–150 kΩ.
